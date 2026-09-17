@@ -24,7 +24,7 @@ checking embedded devices, boot logs, sensors, and simple serial protocols.
 ## Build and Run
 
 ```bash
-git clone https://github.com/<your-account>/suart.git
+git clone https://github.com/LilPatr1ck/suart.git
 cd suart
 cargo run --release
 ```
