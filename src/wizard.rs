@@ -1,7 +1,7 @@
 use crate::config::{
     EnumItems, SerialConfig, BaudRateSelection, DataBitsSelection, 
     StopBitsSelection, TimeoutSelection, ParityStyleSelection, 
-    DisplayModeSelection, LineBreakSelection
+    DisplayModeSelection, LineBreakSelection, BaudRate, Timeout
 };
 use dialoguer::{theme::ColorfulTheme, Select, Confirm};
 
@@ -48,48 +48,38 @@ impl SerialWizard {
                 }
             };
 
-            // 2. Baud Rate Selection and Custom Parser
+            // 2. Baud Rate Selection and Packaging
             let baud_selection = BaudRateSelection::interact_select("Select Baud Rate");
-            let baud_rate: u32 = match baud_selection {
-                BaudRateSelection::B9600 => 9600,
-                BaudRateSelection::B19200 => 19200,
-                BaudRateSelection::B38400 => 38400,
-                BaudRateSelection::B57600 => 57600,
-                BaudRateSelection::B115200 => 115200,
+            let baud_rate = match baud_selection {
+                BaudRateSelection::B9600 => BaudRate::Fixed(9600),
+                BaudRateSelection::B19200 => BaudRate::Fixed(19200),
+                BaudRateSelection::B38400 => BaudRate::Fixed(38400),
+                BaudRateSelection::B57600 => BaudRate::Fixed(57600),
+                BaudRateSelection::B115200 => BaudRate::Fixed(115200),
                 BaudRateSelection::Custom => {
-                    BaudRateSelection::interact_input("Enter custom Baud Rate", 115200)
+                    let val = BaudRateSelection::interact_input("Enter custom Baud Rate", 115200);
+                    BaudRate::Custom(val)
                 }
             };
 
-            // 3. Data Bits Frame Mapping
-            let data_bits_selection = DataBitsSelection::interact_select("Select Data Bits");
-            let data_bits: u8 = match data_bits_selection {
-                DataBitsSelection::Five => 5,
-                DataBitsSelection::Six => 6,
-                DataBitsSelection::Seven => 7,
-                DataBitsSelection::Eight => 8,
-            };
+            // 3. Frame Layout Selections
+            let data_bits = DataBitsSelection::interact_select("Select Data Bits");
+            let stop_bits = StopBitsSelection::interact_select("Select Stop Bits");
 
-            // 4. Stop Bits Frame Mapping
-            let stop_bits_selection = StopBitsSelection::interact_select("Select Stop Bits");
-            let stop_bits: u8 = match stop_bits_selection {
-                StopBitsSelection::One => 1,
-                StopBitsSelection::Two => 2,
-            };
-
-            // 5. Read/Write Hardware Timeout Parser
+            // 4. Read/Write Hardware Timeout Packaging
             let timeout_selection = TimeoutSelection::interact_select("Select Read/Write Timeout");
-            let timeout_ms: u32 = match timeout_selection {
-                TimeoutSelection::T0 => 0,
-                TimeoutSelection::T10 => 10,
-                TimeoutSelection::T100 => 100,
-                TimeoutSelection::T500 => 500,
+            let timeout_ms = match timeout_selection {
+                TimeoutSelection::T0 => Timeout::Fixed(0),
+                TimeoutSelection::T10 => Timeout::Fixed(10),
+                TimeoutSelection::T100 => Timeout::Fixed(100),
+                TimeoutSelection::T500 => Timeout::Fixed(500),
                 TimeoutSelection::Custom => {
-                    TimeoutSelection::interact_input("Enter custom timeout (ms)", 100)
+                    let val = TimeoutSelection::interact_input("Enter custom timeout (ms)", 100);
+                    Timeout::Custom(val)
                 }
             };
 
-            // 6. Native Enum Application Parameters
+            // 5. Native Enum Application Parameters
             let parity = ParityStyleSelection::interact_select("Select Parity");
             let display_mode = DisplayModeSelection::interact_select("Select Display Mode");
             let line_break = LineBreakSelection::interact_select("Select Line Endings");
@@ -105,15 +95,15 @@ impl SerialWizard {
                 line_break,
             };
 
-            // 7. Final Configuration Summary and Confirmation Gate
+            // 6. Final Clean Summary Review Gate
             println!("\n========================================");
             println!("        REVIEW YOUR CONFIGURATION       ");
             println!("========================================");
             println!("  Port Name:    {}", config.port_name);
-            println!("  Baud Rate:    {} bps", config.baud_rate);
+            println!("  Baud Rate:    {}", config.baud_rate);
             println!("  Data Bits:    {}", config.data_bits);
             println!("  Stop Bits:    {}", config.stop_bits);
-            println!("  Timeout:      {} ms", config.timeout_ms);
+            println!("  Timeout:      {}", config.timeout_ms);
             println!("  Parity:       {}", config.parity);
             println!("  Display Mode: {}", config.display_mode);
             println!("  Line Ending:  {}", config.line_break);
