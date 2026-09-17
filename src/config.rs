@@ -1,7 +1,9 @@
 use std::fmt;
 use strum::VariantArray;
 
-impl<T: strum::VariantArray + std::fmt::Display + Copy> EnumItems for T {}
+// Blanket implementation:
+// Automatically applies the EnumItems trait to any type `T` that fulfills the bounds.
+impl<T: strum::VariantArray + std::fmt::Display + Copy + Default + PartialEq> EnumItems for T {}
 
 #[derive(Debug, Clone)]
 pub struct SerialConfig {
@@ -10,6 +12,7 @@ pub struct SerialConfig {
     pub data_bits: u8,
     pub parity: ParityStyleSelection,
 }
+
 
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray)]
 pub enum ParityStyleSelection { None, Odd, Even }
@@ -23,6 +26,7 @@ impl fmt::Display for ParityStyleSelection {
         }
     }
 }
+
 
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray)]
 pub enum BaudRateSelection {
@@ -57,14 +61,14 @@ impl fmt::Display for BaudRateSelection {
 /// A trait extension to automate console menus and string conversions for enums.
 ///
 /// **How it works:**
-/// Any enum that derives `VariantArray`, implements `Display`, and implements `Copy`
-/// automatically receives both helper methods via a blanket implementation.
-/// This completely eliminates boilerplate code when creating multiple CLI menus.
-pub trait EnumItems: strum::VariantArray + std::fmt::Display + Copy {
+/// Any enum that derives `VariantArray`, implements `Display`, implements `Copy`, 
+/// and implements `Default` automatically receives these helper methods via a blanket implementation.
+/// This completely removes boilerplate code when creating multiple CLI configuration menus.
+pub trait EnumItems: strum::VariantArray + std::fmt::Display + Copy + Default + PartialEq {
     
     /// Returns a vector containing the string representations of all enum variants.
     /// 
-    /// Useful if you need to manually pass the string items elsewhere.
+    /// Useful if you need to manually pass the string items to a custom UI element.
     /// Called as an associated function: `YourEnum::to_string_vec()`
     fn to_string_vec() -> Vec<String> {
         Self::VARIANTS
@@ -76,16 +80,29 @@ pub trait EnumItems: strum::VariantArray + std::fmt::Display + Copy {
     /// Renders a native `dialoguer` selection menu in the terminal and returns 
     /// the concrete enum variant chosen by the user.
     ///
+    /// The default highlighted item in the menu is automatically determined 
+    /// by the enum's `Default` implementation.
+    ///
     /// # Arguments
     /// * `prompt` - The text question displayed to the user in the console.
-    /// * `default_idx` - The 0-based index of the variant that should be highlighted by default.
     ///
     /// # Example
     /// ```rust
-    /// let speed = BaudRateSelection::interact_select("Choose speed:", 1);
+    /// #[derive(VariantArray, Default, Clone, Copy, PartialEq)]
+    /// enum Parity { #[default] None, Even, Odd }
+    /// impl std::fmt::Display for Parity { ... }
+    /// 
+    /// // Standard call without passing explicit indexes:
+    /// let selected_parity = Parity::interact_select("Select Parity:");
     /// ```
-    fn interact_select(prompt: &str, default_idx: usize) -> Self {
+    fn interact_select(prompt: &str) -> Self {
         let items = Self::to_string_vec();
+
+        // Automatically locate the position of the default variant in the array
+        let default_idx = Self::VARIANTS
+            .iter()
+            .position(|&variant| variant == Self::default())
+            .unwrap_or(0);
 
         let selection_index = dialoguer::Select::with_theme(&dialoguer::theme::ColorfulTheme::default())
             .with_prompt(prompt)
