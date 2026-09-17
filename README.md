@@ -1,4 +1,4 @@
-# suart
+# SimpleUART
 
 Interactive command-line tool for working with UART and other serial ports.
 
