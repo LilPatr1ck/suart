@@ -1,11 +1,10 @@
 use std::fmt;
 use strum::VariantArray;
 
-/// A trait extension to automate console menus and string conversions for enums.
+/// Supplies shared dialoguer prompts for enum-based settings.
 pub trait EnumItems: strum::VariantArray + std::fmt::Display + PartialEq + Copy + Default {
     
-    /// Returns a vector containing the string representations of all enum variants.
-    /// Dynamically appends a `(Default)` suffix to the default variant at runtime.
+    /// Formats all variants and marks the type's default choice.
     fn to_string_vec() -> Vec<String> {
         Self::VARIANTS
             .iter()
@@ -19,7 +18,7 @@ pub trait EnumItems: strum::VariantArray + std::fmt::Display + PartialEq + Copy 
             .collect()
     }
 
-    /// Renders a native `dialoguer` selection menu in the terminal.
+    /// Asks the user to choose one of the enum variants.
     fn interact_select(prompt: &str) -> Self {
         let items = Self::to_string_vec();
 
@@ -38,7 +37,7 @@ pub trait EnumItems: strum::VariantArray + std::fmt::Display + PartialEq + Copy 
         Self::VARIANTS[selection_index]
     }
 
-    /// Renders a manual text input prompt with an optional fallback value.
+    /// Reads a typed value, using `default` when the user submits an empty input.
     fn interact_input<N>(prompt: &str, default: N) -> N 
     where
         N: std::str::FromStr + Clone + fmt::Display,
@@ -55,7 +54,7 @@ pub trait EnumItems: strum::VariantArray + std::fmt::Display + PartialEq + Copy 
 impl<T: strum::VariantArray + std::fmt::Display + Copy + Default + PartialEq> EnumItems for T {}
 
 
-/// Runtime representation of baud rate data (either selected or entered manually).
+/// Baud rate chosen from the presets or entered by the user.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BaudRate {
     Fixed(u32),
@@ -72,7 +71,7 @@ impl fmt::Display for BaudRate {
 }
 
 
-/// Runtime representation of the connection hardware timeout.
+/// Timeout chosen from the presets or entered by the user.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Timeout {
     Fixed(u32),
@@ -90,7 +89,7 @@ impl fmt::Display for Timeout {
 }
 
 
-/// Selection for the serial port parity configuration.
+/// Available parity modes for the serial port.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum ParityStyleSelection { 
     #[default] 
@@ -110,7 +109,7 @@ impl fmt::Display for ParityStyleSelection {
 }
 
 
-/// Selection for standard and custom serial port baud rates.
+/// Preset baud rates and the manual-entry option.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum BaudRateSelection {
     B9600,
@@ -136,7 +135,7 @@ impl fmt::Display for BaudRateSelection {
 }
 
 
-/// Selection for the number of data bits per frame.
+/// Number of data bits in each serial frame.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum DataBitsSelection {
     Five,
@@ -158,7 +157,7 @@ impl fmt::Display for DataBitsSelection {
 }
 
 
-/// Selection for the number of stop bits per frame.
+/// Number of stop bits in each serial frame.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum StopBitsSelection { 
     #[default]
@@ -176,7 +175,7 @@ impl fmt::Display for StopBitsSelection {
 }
 
 
-/// Selection for read/write timeouts, including option for manual configuration.
+/// Preset read/write timeouts and the manual-entry option.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum TimeoutSelection {
     #[default]
@@ -200,7 +199,7 @@ impl fmt::Display for TimeoutSelection {
 }
 
 
-/// Selection for incoming data rendering mode in the terminal output.
+/// Formats used to display bytes received from the port.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum DisplayModeSelection {
     #[default]
@@ -220,7 +219,7 @@ impl fmt::Display for DisplayModeSelection {
 }
 
 
-/// Selection for character-based line endings appended to outgoing packets.
+/// Line ending appended to each line sent from stdin.
 #[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum LineBreakSelection {
     #[default]
@@ -242,7 +241,7 @@ impl fmt::Display for LineBreakSelection {
 }
 
 
-/// Holds parsed and strongly-typed active serial port parameters.
+/// Serial settings collected by the configuration wizard.
 #[derive(Debug, Clone)]
 pub struct SerialConfig {
     pub port_name: String,
@@ -256,7 +255,7 @@ pub struct SerialConfig {
 }
 
 impl SerialConfig {
-    /// Opens the physical serial port based on the active structural parameters.
+    /// Converts the wizard's settings to `serialport` options and opens the port.
     pub fn open_port(&self) -> Result<Box<dyn serialport::SerialPort>, serialport::Error> {
         let raw_baud = match self.baud_rate {
             BaudRate::Fixed(val) => val,

@@ -5,18 +5,17 @@ use crate::config::{
 };
 use dialoguer::{theme::ColorfulTheme, Select, Confirm};
 
-/// Orchestrates the step-by-step interactive CLI wizard to configure a serial port.
+/// Collects serial settings through an interactive CLI wizard.
 pub struct SerialWizard;
 
 impl SerialWizard {
-    /// Runs the interactive terminal wizard loop and returns a validated `SerialConfig`.
+    /// Repeats the wizard until the user confirms the displayed settings.
     pub fn run() -> SerialConfig {
         loop {
             println!("========================================");
             println!("     SERIAL PORT CONFIGURATION WIZARD   ");
             println!("========================================\n");
 
-            // 1. Hardware Port Detection and Selection
             let port_name: String = match serialport::available_ports() {
                 Ok(ports) if !ports.is_empty() => {
                     let mut port_list: Vec<String> = ports
@@ -45,7 +44,6 @@ impl SerialWizard {
                 }
             };
 
-            // 2. Baud Rate Selection and Packaging (Type interference explicitly declared)
             let baud_selection = BaudRateSelection::interact_select("Select Baud Rate");
             let baud_rate = match baud_selection {
                 BaudRateSelection::B9600 => BaudRate::Fixed(9600),
@@ -59,11 +57,9 @@ impl SerialWizard {
                 }
             };
 
-            // 3. Frame Layout Selections
             let data_bits = DataBitsSelection::interact_select("Select Data Bits");
             let stop_bits = StopBitsSelection::interact_select("Select Stop Bits");
 
-            // 4. Read/Write Hardware Timeout Packaging (Type interference explicitly declared)
             let timeout_selection = TimeoutSelection::interact_select("Select Read/Write Timeout");
             let timeout_ms = match timeout_selection {
                 TimeoutSelection::T0 => Timeout::Fixed(0),
@@ -76,7 +72,6 @@ impl SerialWizard {
                 }
             };
 
-            // 5. Native Enum Application Parameters
             let parity = ParityStyleSelection::interact_select("Select Parity");
             let display_mode = DisplayModeSelection::interact_select("Select Display Mode");
             let line_break = LineBreakSelection::interact_select("Select Line Endings");
@@ -92,7 +87,6 @@ impl SerialWizard {
                 line_break,
             };
 
-            // 6. Final Clean Summary Review Gate
             println!("\n========================================");
             println!("        REVIEW YOUR CONFIGURATION       ");
             println!("========================================");

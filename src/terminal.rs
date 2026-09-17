@@ -4,22 +4,24 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-/// Manages interactive bidirectional input/output streaming loops over an open port.
+/// Runs the interactive session for an opened serial port.
 pub struct SerialTerminal;
 
 impl SerialTerminal {
-    /// Launches concurrent background threads for reading from the port and catching user input.
+    /// Reads incoming bytes and sends user-entered lines concurrently.
     pub fn start(config: SerialConfig, mut port: Box<dyn serialport::SerialPort>) {
         println!("--- Active Terminal Session Engaged ---");
         println!("Type standard characters and press Enter to transmit. Use Ctrl+C to terminate session.\n");
 
-        let mut reader_port = port.try_clone().expect("Failed to split hardware reference context for asynchronous reading");
+        let mut reader_port = port
+            .try_clone()
+            .expect("Failed to clone the serial port for reading");
         let display_mode = config.display_mode;
         
-        // Create an asynchronous channel to bridge terminal input with the main transmitter loop
+        // The stdin thread cannot write to the port directly because the port is also read here.
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
 
-        // Stream A: Dedicated Asynchronous Hardware Buffer Monitor Loop
+        // Keep reading independently so incoming data is shown while stdin waits for a line.
         thread::spawn(move || {
             let mut buffer: [u8; 1024] = [0; 1024];
             loop {
@@ -29,7 +31,7 @@ impl SerialTerminal {
                     }
                     Ok(_) => {}
                     Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
-                        // Regular timeout event; yield frame context to proceed polling safely
+                        // A timeout is expected: it lets the loop check the port again.
                     }
                     Err(err) => {
                         eprintln!("\n[Hardware connection severed: {}]", err);
@@ -39,8 +41,7 @@ impl SerialTerminal {
             }
         });
 
-        // Stream B: Dedicated User Console Stdin Monitor Thread
-        // This isolates the blocking read_line call from both the hardware logic and the OS drivers
+        // read_line blocks, so stdin gets its own thread and cannot stop serial reads.
         thread::spawn(move || {
             let mut user_input = String::new();
             loop {
@@ -53,7 +54,7 @@ impl SerialTerminal {
 
                     let mut bytes_to_send = trimmed.as_bytes().to_vec();
 
-                    // Process dynamic Line Ending injections
+                    // The selected terminator is added after trimming the terminal's newline.
                     match config.line_break {
                         LineBreakSelection::None => {}
                         LineBreakSelection::Lf => bytes_to_send.push(b'\n'),
@@ -64,7 +65,6 @@ impl SerialTerminal {
                         }
                     }
 
-                    // Forward processed transmission frames to the transmitter pipeline
                     if tx.send(bytes_to_send).is_err() {
                         break;
                     }
@@ -72,10 +72,8 @@ impl SerialTerminal {
             }
         });
 
-        // Stream C: Main Thread Low-Latency Hardware Transmitter Pipeline
-        // Listens to the channel thread and writes directly to the physical serial bus
+        // Only this loop writes to the port, keeping serial writes ordered.
         loop {
-            // Receive data frames with a short timeout to prevent complete thread starvation
             if let Ok(payload) = rx.recv_timeout(Duration::from_millis(50)) {
                 if let Err(err) = port.write_all(&payload) {
                     eprintln!("[Transmission failure: {}]", err);
@@ -86,7 +84,7 @@ impl SerialTerminal {
         }
     }
 
-    /// Evaluates, reformats, and flushes raw ingress packet arrays based on runtime requirements.
+    /// Prints an incoming chunk in the selected representation.
     fn process_incoming(bytes: &[u8], mode: DisplayModeSelection) {
         match mode {
             DisplayModeSelection::Ascii => {
