@@ -4,7 +4,7 @@ use std::io::{self, Read, Write};
 use std::time::Duration;
 
 fn main() {
-    println!("=== UART CLI Listener ===");
+    println!("Simple UART");
 
     // Автоматический поиск доступных портов
     let ports = match serialport::available_ports() {

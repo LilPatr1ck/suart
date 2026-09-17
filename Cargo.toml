@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 dialoguer = "0.12.0"
 serialport = "4.10.1"
+strum = { version = "0.28.0", features = ["derive"] }
