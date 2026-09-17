@@ -10,9 +10,6 @@ pub struct SerialWizard;
 
 impl SerialWizard {
     /// Runs the interactive terminal wizard loop and returns a validated `SerialConfig`.
-    /// 
-    /// If the user rejects the configuration on the final review screen, 
-    /// the wizard resets and restarts the process automatically.
     pub fn run() -> SerialConfig {
         loop {
             println!("========================================");
@@ -48,7 +45,7 @@ impl SerialWizard {
                 }
             };
 
-            // 2. Baud Rate Selection and Packaging
+            // 2. Baud Rate Selection and Packaging (Type interference explicitly declared)
             let baud_selection = BaudRateSelection::interact_select("Select Baud Rate");
             let baud_rate = match baud_selection {
                 BaudRateSelection::B9600 => BaudRate::Fixed(9600),
@@ -57,7 +54,7 @@ impl SerialWizard {
                 BaudRateSelection::B57600 => BaudRate::Fixed(57600),
                 BaudRateSelection::B115200 => BaudRate::Fixed(115200),
                 BaudRateSelection::Custom => {
-                    let val = BaudRateSelection::interact_input("Enter custom Baud Rate", 115200);
+                    let val: u32 = BaudRateSelection::interact_input("Enter custom Baud Rate", 115200);
                     BaudRate::Custom(val)
                 }
             };
@@ -66,7 +63,7 @@ impl SerialWizard {
             let data_bits = DataBitsSelection::interact_select("Select Data Bits");
             let stop_bits = StopBitsSelection::interact_select("Select Stop Bits");
 
-            // 4. Read/Write Hardware Timeout Packaging
+            // 4. Read/Write Hardware Timeout Packaging (Type interference explicitly declared)
             let timeout_selection = TimeoutSelection::interact_select("Select Read/Write Timeout");
             let timeout_ms = match timeout_selection {
                 TimeoutSelection::T0 => Timeout::Fixed(0),
@@ -74,7 +71,7 @@ impl SerialWizard {
                 TimeoutSelection::T100 => Timeout::Fixed(100),
                 TimeoutSelection::T500 => Timeout::Fixed(500),
                 TimeoutSelection::Custom => {
-                    let val = TimeoutSelection::interact_input("Enter custom timeout (ms)", 100);
+                    let val: u32 = TimeoutSelection::interact_input("Enter custom timeout (ms)", 100);
                     Timeout::Custom(val)
                 }
             };
