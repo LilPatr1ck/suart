@@ -14,8 +14,8 @@ pub struct SerialConfig {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, VariantArray)]
-pub enum ParityStyleSelection { None, Odd, Even }
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum ParityStyleSelection { #[default] None, Odd, Even }
 
 impl fmt::Display for ParityStyleSelection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -28,12 +28,13 @@ impl fmt::Display for ParityStyleSelection {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
 pub enum BaudRateSelection {
     B9600,
     B19200,
     B38400,
     B57600,
+    #[default]
     B115200,
     Custom, 
 }
@@ -53,9 +54,105 @@ impl fmt::Display for BaudRateSelection {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum DataBits {
+    Five,
+    Six,
+    Seven,
+    #[default]
+    Eight,
+}
+
+impl fmt::Display for DataBits {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Five => write!(f, "5 bits"),
+            Self::Six => write!(f, "6 bits"),
+            Self::Seven => write!(f, "7 bits"),
+            Self::Eight => write!(f, "8 bits (Default)"),
+        }
+    }
+}
 
 
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum StopBits {
+    #[default]
+    One,
+    Two,
+}
 
+impl fmt::Display for StopBits {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::One => write!(f, "1 bit (Default)"),
+            Self::Two => write!(f, "2 bits"),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum TimeoutSelection {
+    #[default]
+    T0,
+    T10,
+    T100,
+    T500,
+    Custom,
+}
+
+impl fmt::Display for TimeoutSelection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::T0 => write!(f, "0 ms (No timeout / Default)"),
+            Self::T10 => write!(f, "10 ms"),
+            Self::T100 => write!(f, "100 ms"),
+            Self::T500 => write!(f, "500 ms"),
+            Self::Custom => write!(f, "Custom timeout (Enter manually)..."),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum DisplayMode {
+    #[default]
+    Ascii,
+    Hex,
+    AsciiHex,
+}
+
+impl fmt::Display for DisplayMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ascii => write!(f, "ASCII (Default)"),
+            Self::Hex => write!(f, "HEX"),
+            Self::AsciiHex => write!(f, "ASCII + HEX"),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, VariantArray, Default)]
+pub enum LineBreak {
+    #[default]
+    None,
+    Lf,
+    Cr,
+    Crlf,
+}
+
+impl fmt::Display for LineBreak {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::None => write!(f, "None (Default)"),
+            Self::Lf => write!(f, "LF"),
+            Self::Cr => write!(f, "CR"),
+            Self::Crlf => write!(f, "CRLF"),
+        }
+    }
+}
 
 
 /// A trait extension to automate console menus and string conversions for enums.
